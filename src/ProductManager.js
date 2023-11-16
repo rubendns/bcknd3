@@ -21,14 +21,20 @@ class ProductManager {
 
     async loadProducts() {
         try {
-            const fileExists = await fs.access(this.path);
-            if (fileExists) {
-                const data = await fs.readFile(this.path, 'utf8');
-                this.products = JSON.parse(data);
-            }
+            await fs.access(this.path);
+            const data = await fs.readFile(this.path, 'utf8');
+            this.products = JSON.parse(data);
+            console.log('Products loaded successfully:');
+            console.log('Go to http://localhost:8080/products to see all products.');
+            console.log('Go to http://localhost:8080/products?limit=5 to see the first 5 products.');
+            console.log('Go to http://localhost:8080/products/2 to view a specific product.');
         } catch (error) {
-            console.error('Error loading products:', error.message);
-            this.products = [];
+            if (error.code === 'ENOENT') {
+                console.log('File not found:', this.path);
+            } else {
+                console.error('Error loading products:', error.message);
+                this.products = [];
+            }
         }
     }
 
@@ -69,7 +75,7 @@ class ProductManager {
     }
 
     getProductById(productId) {
-        const product = this.products.find(product => product.id === productId);
+        const product = this.products.find(product => product.id == productId);
         if (!product) {
             throw new Error('Product not found');
         }
@@ -80,7 +86,7 @@ class ProductManager {
         const productIndex = this.products.findIndex(product => product.id === id);
         if (productIndex !== -1) {
             const existingProduct = this.products[productIndex];
-            
+
             if (newProduct.code && newProduct.code !== existingProduct.code && this.isProductCodeDuplicate(newProduct.code)) {
                 throw new Error('Product code already exists');
             }
@@ -105,23 +111,24 @@ class ProductManager {
     }
 }
 
+module.exports = ProductManager;
 // Ejemplo de uso
-(async () => {
-    const productManager = new ProductManager('products.json');
+// (async () => {
+//     const productManager = new ProductManager('products.json');
 
-    try {
-        await productManager.addProduct({
-            title: "producto prueba",
-            description: "Este es un producto de prueba",
-            price: 200,
-            thumbnail: "Sin imagen",
-            code: "abc123",
-            stock: 25
-        });
+//     try {
+//         await productManager.addProduct({
+//             title: "producto prueba",
+//             description: "Este es un producto de prueba",
+//             price: 200,
+//             thumbnail: "Sin imagen",
+//             code: "abc123",
+//             stock: 25
+//         });
 
-        console.log("Lista de productos actualizada:");
-        console.log(productManager.getProducts());
-    } catch (error) {
-        console.error(error.message);
-    }
-})();
+//         console.log("Lista de productos actualizada:");
+//         console.log(productManager.getProducts());
+//     } catch (error) {
+//         console.error(error.message);
+//     }
+// })();
